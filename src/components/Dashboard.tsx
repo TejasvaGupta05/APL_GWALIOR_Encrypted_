@@ -3,7 +3,7 @@ import {
   Compass, Users, TreePine, Recycle, Cpu, ShieldCheck, 
   Sprout, Award, Clock, MapPin, Sparkles, Filter, CheckCircle2, 
   Send, Heart, MessageSquare, Plus, PlusCircle, AlertCircle, ArrowUpRight,
-  TrendingUp, Trash2, Calendar, HardHat, FileText, Check, AlertTriangle
+  TrendingUp, Trash2, Calendar, HardHat, FileText, Check, AlertTriangle, LogOut
 } from "lucide-react";
 import { 
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, 
@@ -13,9 +13,10 @@ import {
 interface DashboardProps {
   user: any;
   onUpdateUser: (updatedUser: any) => void;
+  onLogout: () => void;
 }
 
-export function Dashboard({ user, onUpdateUser }: DashboardProps) {
+export function Dashboard({ user, onUpdateUser, onLogout }: DashboardProps) {
   const [activeTab, setActiveTab] = useState<string>("dashboard");
 
   // Macro State Collections (synchronized with Express API)
@@ -564,11 +565,11 @@ export function Dashboard({ user, onUpdateUser }: DashboardProps) {
               </div>
             </div>
 
-            <div className="relative">
+            <div className="relative flex items-center gap-2">
               <select
                 value={user.role}
                 onChange={(e) => handleToggleRoleInDashboard(e.target.value)}
-                className="bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold px-3 py-2 rounded-xl focus:outline-none focus:border-emerald-500 cursor-pointer shadow-sm hover:bg-slate-100 transition-colors"
+                className="bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold px-3 py-2 rounded-xl focus:outline-none focus:border-emerald-500 cursor-pointer shadow-sm hover:bg-slate-100 transition-colors mr-1"
                 title="Switch Node Persona"
               >
                 <option value="volunteer">Alex Rivera (Volunteer)</option>
@@ -577,6 +578,16 @@ export function Dashboard({ user, onUpdateUser }: DashboardProps) {
                 <option value="fertilizer_company">EcoAgro (Fertilizer)</option>
                 <option value="admin">Platform Manager (Admin)</option>
               </select>
+
+              <button
+                onClick={onLogout}
+                id="header-logout-btn"
+                className="flex items-center space-x-1 px-2.5 py-2 rounded-xl text-xs font-bold bg-red-50 border border-red-200 text-red-700 hover:text-red-800 hover:bg-red-100 transition-all cursor-pointer shadow-sm"
+                title="Sign Out Session"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Sign Out</span>
+              </button>
             </div>
           </div>
 

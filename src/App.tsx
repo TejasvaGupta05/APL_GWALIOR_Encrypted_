@@ -7,6 +7,7 @@ export default function App() {
   // Screen-routing states: 'landing' | 'auth' | 'app_dashboard'
   const [screen, setScreen] = useState<'landing' | 'auth' | 'app_dashboard'>('landing');
   const [user, setUser] = useState<any | null>(null);
+  const [initialAuthMode, setInitialAuthMode] = useState<'login' | 'register'>('login');
 
   // Sync profile session on mount
   useEffect(() => {
@@ -28,6 +29,11 @@ export default function App() {
     checkActiveSession();
   }, []);
 
+  const handleStartAuth = (mode: 'login' | 'register') => {
+    setInitialAuthMode(mode);
+    setScreen('auth');
+  };
+
   const handleAuthSuccess = (authenticatedUser: any) => {
     setUser(authenticatedUser);
     setScreen('app_dashboard');
@@ -35,11 +41,14 @@ export default function App() {
 
   const handleLogout = async () => {
     try {
-      // Toggle or reset user back to guest
+      // Clear session securely on the backend server
+      await fetch("/api/auth/logout", { method: "POST" });
       setUser(null);
       setScreen('landing');
     } catch (err) {
       console.error("Logout error:", err);
+      setUser(null);
+      setScreen('landing');
     }
   };
 
@@ -47,13 +56,14 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 font-sans selection:bg-emerald-100 selection:text-emerald-950">
       {screen === 'landing' && (
         <LandingPage 
-          onStart={() => setScreen('auth')} 
-          onExplore={() => setScreen('auth')} 
+          onLogin={() => handleStartAuth('login')} 
+          onRegister={() => handleStartAuth('register')} 
         />
       )}
 
       {screen === 'auth' && (
         <AuthScreen 
+          initialMode={initialAuthMode}
           onSuccess={handleAuthSuccess} 
           onBackToLanding={() => setScreen('landing')} 
         />
@@ -63,6 +73,7 @@ export default function App() {
         <Dashboard 
           user={user} 
           onUpdateUser={(updated) => setUser(updated)} 
+          onLogout={handleLogout}
         />
       )}
     </div>

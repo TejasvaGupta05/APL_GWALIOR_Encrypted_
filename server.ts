@@ -118,7 +118,7 @@ let users: any[] = [
   }
 ];
 
-let activeUser: any = users[0]; // Alex Rivera by default, can be toggled
+let activeUser: any = null; // No one is logged in by default
 
 let communities = [
   {
@@ -411,10 +411,20 @@ app.post("/api/auth/toggle-role", (req, res) => {
 });
 
 app.post("/api/auth/register", (req, res) => {
-  const { name, email, role, causes, skills, availability, location } = req.body;
+  const { name, email, password, role, causes, skills, availability, location } = req.body;
+  if (!email || !name || !password) {
+    return res.status(400).json({ success: false, message: "Required fields are missing." });
+  }
+
+  const existing = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  if (existing) {
+    return res.status(400).json({ success: false, message: "An account with this email address already exists." });
+  }
+
   const newUser = {
     id: `user-${Date.now()}`,
-    email: email || "new@impactcircle.org",
+    email: email.toLowerCase(),
+    password: password, // Store plain-text for simple prototype database persistence
     name: name || "Anonymous Changemaker",
     role: role || "volunteer",
     causes: causes || ["Sustainability"],
@@ -431,21 +441,35 @@ app.post("/api/auth/register", (req, res) => {
       { id: "b-welcome", name: "Joiner", description: "Completed onboarding profile setup!", icon: "Flame", unlockedAt: "2026-05-31", color: "from-blue-400 to-indigo-500" }
     ]
   };
+  
   users.push(newUser);
   activeUser = newUser;
   res.json({ success: true, user: activeUser });
 });
 
 app.post("/api/auth/login", (req, res) => {
-  const { email } = req.body;
-  const found = users.find(u => u.email === email);
-  if (found) {
-    activeUser = found;
-    res.json({ success: true, user: activeUser });
-  } else {
-    // Login first matching user of default
-    res.json({ success: true, user: activeUser });
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ success: false, message: "Email and password are required inputs." });
   }
+
+  const found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  if (found) {
+    const userPassword = found.password || "password"; // Default fallback to "password" for demonstration users
+    if (password === userPassword) {
+      activeUser = found;
+      res.json({ success: true, user: activeUser });
+    } else {
+      res.status(401).json({ success: false, message: "Invalid password for this account. Please try again." });
+    }
+  } else {
+    res.status(401).json({ success: false, message: "No registered account found with that email address. Would you like to create an account?" });
+  }
+});
+
+app.post("/api/auth/logout", (req, res) => {
+  activeUser = null;
+  res.json({ success: true });
 });
 
 // --- CORE RESOURCES ENDPOINTS ---

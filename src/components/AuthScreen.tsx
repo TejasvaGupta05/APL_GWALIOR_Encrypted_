@@ -4,11 +4,17 @@ import { Sprout, Lock, Mail, User, ShieldAlert, Sparkles, MapPin, Compass, Arrow
 interface AuthScreenProps {
   onSuccess: (user: any) => void;
   onBackToLanding: () => void;
+  initialMode?: "login" | "register";
 }
 
-export function AuthScreen({ onSuccess, onBackToLanding }: AuthScreenProps) {
-  const [mode, setMode] = useState<"login" | "register" | "forgot" | "verify">("login");
+export function AuthScreen({ onSuccess, onBackToLanding, initialMode = "login" }: AuthScreenProps) {
+  const [mode, setMode] = useState<"login" | "register" | "forgot" | "verify">(initialMode);
   
+  // Credentials & Feedback State
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
   // Registration / Onboarding Form State
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -18,6 +24,13 @@ export function AuthScreen({ onSuccess, onBackToLanding }: AuthScreenProps) {
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [availability, setAvailability] = useState<"Weekdays" | "Weekends" | "Flexible">("Flexible");
   const [address, setAddress] = useState("Civic Center, San Francisco, CA");
+
+  const handleSwitchMode = (newMode: "login" | "register" | "forgot" | "verify") => {
+    setMode(newMode);
+    setError(null);
+    setPassword("");
+    setConfirmPassword("");
+  };
   
   const availableCauses = [
     "Environment", "Tree Plantation", "Animal Welfare", "Education", 
@@ -42,30 +55,61 @@ export function AuthScreen({ onSuccess, onBackToLanding }: AuthScreenProps) {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    if (!email) {
+      setError("Please key in your registered email address.");
+      return;
+    }
+    if (!password) {
+      setError("Please key in your account credentials password.");
+      return;
+    }
+
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email || "volunteer@impactcircle.org" })
+        body: JSON.stringify({ email, password })
       });
       const data = await response.json();
       if (data.success) {
         onSuccess(data.user);
+      } else {
+        setError(data.message || "Invalid credentials limit reached or incorrect credentials.");
       }
     } catch (err) {
       console.error("Login failed:", err);
+      setError("Network error connecting to verification API ports.");
     }
   };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
+    if (!email || !name) {
+      setError("Please fill out your name and email address.");
+      return;
+    }
+
+    if (!password || password.length < 6) {
+      setError("Password must possess at least 6 characters.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Confirm password matches incorrectly with original.");
+      return;
+    }
+
     // Simulate latitude and longitude based on general SF location
     const lat = 37.7749 + (Math.random() - 0.5) * 0.05;
     const lng = -122.4194 + (Math.random() - 0.5) * 0.05;
 
     const payload = {
-      name: name || "Demo Member",
-      email: email || "member@impactcircle.org",
+      name,
+      email,
+      password,
       role,
       causes: selectedCauses.length ? selectedCauses : ["Environment", "Sustainability"],
       skills: selectedSkills,
@@ -85,9 +129,12 @@ export function AuthScreen({ onSuccess, onBackToLanding }: AuthScreenProps) {
         setTimeout(() => {
           onSuccess(data.user);
         }, 3000); // Redirect after short simulation
+      } else {
+        setError(data.message || "Email address might already exist in our loop registries.");
       }
     } catch (err) {
       console.error("Register failed:", err);
+      setError("Network error deploying verification request details.");
     }
   };
 
@@ -144,6 +191,14 @@ export function AuthScreen({ onSuccess, onBackToLanding }: AuthScreenProps) {
           </p>
         </div>
 
+        {/* ERROR STATUS ALERT CONTAINER */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-semibold flex items-start space-x-2.5 animate-pulse">
+            <ShieldAlert className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </div>
+        )}
+
         {/* 1. LOGIN MODE */}
         {mode === "login" && (
           <form onSubmit={handleLogin} className="space-y-5 max-w-md mx-auto">
@@ -153,10 +208,14 @@ export function AuthScreen({ onSuccess, onBackToLanding }: AuthScreenProps) {
                 <Mail className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
                 <input
                   type="email"
+                  required
                   placeholder="volunteer@impactcircle.org"
                   className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition-all font-sans"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setError(null);
+                  }}
                 />
               </div>
             </div>
@@ -168,7 +227,13 @@ export function AuthScreen({ onSuccess, onBackToLanding }: AuthScreenProps) {
                 <input
                   type="password"
                   placeholder="••••••••"
+                  required
                   className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition-all font-sans"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError(null);
+                  }}
                 />
               </div>
             </div>
@@ -176,7 +241,7 @@ export function AuthScreen({ onSuccess, onBackToLanding }: AuthScreenProps) {
             <div className="flex justify-between items-center text-xs">
               <button
                 type="button"
-                onClick={() => setMode("forgot")}
+                onClick={() => handleSwitchMode("forgot")}
                 className="text-slate-500 hover:text-emerald-600 font-semibold transition-all"
               >
                 Forgot Password?
@@ -230,7 +295,7 @@ export function AuthScreen({ onSuccess, onBackToLanding }: AuthScreenProps) {
               New to our ecosystem?{" "}
               <button
                 type="button"
-                onClick={() => setMode("register")}
+                onClick={() => handleSwitchMode("register")}
                 className="text-emerald-600 hover:underline font-extrabold transition-all"
               >
                 Create an Account
@@ -253,7 +318,10 @@ export function AuthScreen({ onSuccess, onBackToLanding }: AuthScreenProps) {
                     placeholder="Alex Rivera"
                     className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm text-slate-900 focus:outline-none focus:border-emerald-500 transition-all"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      setError(null);
+                    }}
                   />
                 </div>
               </div>
@@ -268,7 +336,46 @@ export function AuthScreen({ onSuccess, onBackToLanding }: AuthScreenProps) {
                     placeholder="alex@example.com"
                     className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm text-slate-900 focus:outline-none focus:border-emerald-500 transition-all"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setError(null);
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-2">Account Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
+                  <input
+                    type="password"
+                    required
+                    placeholder="•••••••• (Min 6 chars)"
+                    className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm text-slate-900 focus:outline-none focus:border-emerald-500 transition-all"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setError(null);
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-2">Confirm Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
+                  <input
+                    type="password"
+                    required
+                    placeholder="••••••••"
+                    className="w-full bg-slate-50 border border-slate-200 focus:bg-white rounded-xl py-3 pl-11 pr-4 text-sm text-slate-900 focus:outline-none focus:border-emerald-500 transition-all"
+                    value={confirmPassword}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      setError(null);
+                    }}
                   />
                 </div>
               </div>
@@ -413,7 +520,7 @@ export function AuthScreen({ onSuccess, onBackToLanding }: AuthScreenProps) {
               Already have a registered node?{" "}
               <button
                 type="button"
-                onClick={() => setMode("login")}
+                onClick={() => handleSwitchMode("login")}
                 className="text-emerald-600 font-bold hover:underline transition-all"
               >
                 Sign In Instead
@@ -424,7 +531,7 @@ export function AuthScreen({ onSuccess, onBackToLanding }: AuthScreenProps) {
 
         {/* 3. FORGOT PASSWORD MODE */}
         {mode === "forgot" && (
-          <form className="space-y-5 max-w-sm mx-auto" onSubmit={(e) => { e.preventDefault(); setMode("login"); }}>
+          <form className="space-y-5 max-w-sm mx-auto" onSubmit={(e) => { e.preventDefault(); handleSwitchMode("login"); }}>
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-2">Registered Email Address</label>
               <div className="relative">
@@ -446,7 +553,7 @@ export function AuthScreen({ onSuccess, onBackToLanding }: AuthScreenProps) {
             </button>
 
             <p className="text-center text-xs">
-              <button type="button" onClick={() => setMode("login")} className="text-emerald-600 hover:underline">
+              <button type="button" onClick={() => handleSwitchMode("login")} className="text-emerald-600 hover:underline">
                 Back to Login Page
               </button>
             </p>

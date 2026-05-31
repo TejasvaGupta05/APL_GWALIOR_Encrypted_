@@ -2,11 +2,11 @@ import { motion } from "motion/react";
 import { TreePine, ArrowRight, Shield, Award, Sparkles, Sprout, Recycle, Users, MessageSquare } from "lucide-react";
 
 interface LandingPageProps {
-  onStart: () => void;
-  onExplore: () => void;
+  onLogin: () => void;
+  onRegister: () => void;
 }
 
-export function LandingPage({ onStart, onExplore }: LandingPageProps) {
+export function LandingPage({ onLogin, onRegister }: LandingPageProps) {
   const steps = [
     {
       icon: <Users className="w-6 h-6 text-emerald-600" />,
@@ -80,14 +80,23 @@ export function LandingPage({ onStart, onExplore }: LandingPageProps) {
               Impact <span className="text-emerald-600">Circle</span>
             </span>
           </div>
-          <button
-            onClick={onStart}
-            id="nav-join-btn"
-            className="px-5 py-2.5 rounded-full text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-md shadow-emerald-200 flex items-center space-x-1.5"
-          >
-            <span>Launch App</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={onLogin}
+              id="nav-login-btn"
+              className="px-4 py-2.5 rounded-full text-xs font-bold text-slate-750 hover:text-emerald-700 transition-all font-sans hover:bg-slate-100"
+            >
+              Sign In
+            </button>
+            <button
+              onClick={onRegister}
+              id="nav-join-btn"
+              className="px-5 py-2.5 rounded-full text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-md shadow-emerald-200 flex items-center space-x-1.5"
+            >
+              <span>Sign Up</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </header>
 
         {/* HERO SECTION */}
@@ -110,7 +119,7 @@ export function LandingPage({ onStart, onExplore }: LandingPageProps) {
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
               <button
-                onClick={onStart}
+                onClick={onRegister}
                 id="hero-join"
                 className="group relative px-8 py-4 bg-slate-900 hover:bg-slate-850 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 hover:scale-105 transition-transform"
               >
@@ -118,11 +127,11 @@ export function LandingPage({ onStart, onExplore }: LandingPageProps) {
                 <ArrowRight className="w-5 h-5" />
               </button>
               <button
-                onClick={onExplore}
+                onClick={onLogin}
                 id="hero-explore"
                 className="px-8 py-4 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all flex items-center justify-center space-x-2"
               >
-                <span>Explore Opportunities</span>
+                <span>Sign In to Explorer</span>
               </button>
             </div>
           </div>
